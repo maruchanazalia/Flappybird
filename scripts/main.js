@@ -1,4 +1,4 @@
-let move_speed = 3, gravity = 0.5;
+let move_speed = 3, gravedad = 0.5;
 let bird = document.querySelector('.bird');
 let img = document.getElementById('bird-1');
 let sound_point = new Audio('sounds effect/point.mp3');
@@ -30,8 +30,9 @@ document.addEventListener('keydown', (e) => {
 
         birdWorker.postMessage({ action: 'start' });
         pipeWorker.postMessage({ action: 'start' });
+        scoreWorker.postMessage({ action: 'restablecerpuntuación' });
 
-        console.log('Sent start message to pipeWorker');
+        console.log('Mensaje de inicio enviado a pipeWorker');
 
     }
 });
@@ -43,8 +44,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 birdWorker.onmessage = function (event) {
-    if (event.data.action === 'updatePosition') {
-        bird.style.top = bird_props.top + event.data.bird_dy + 'px';
+    if (event.data.action === 'actualizarPosición') {
+        bird.style.top = bird_props.top + event.data.pajarito + 'px';
         bird_props = bird.getBoundingClientRect();
 
         if (bird_props.top <= 0 || bird_props.bottom >= background.bottom) {
@@ -55,37 +56,100 @@ birdWorker.onmessage = function (event) {
 
 pipeWorker.onmessage = function (event) {
     if (event.data.action === 'createPipe') {
-        console.log('Creating pipe with top position:', event.data.topPosition, 'and bottom position:', event.data.bottomPosition);
+        const gapHeight = 15;  
 
-        // Crear el tubo superior
-        let pipe_sprite_inv = document.createElement('div');
-        pipe_sprite_inv.className = 'pipe_sprite';
-        pipe_sprite_inv.style.top = '0';  // Anclado arriba
-        pipe_sprite_inv.style.height = event.data.topPosition + 'vh';
-        pipe_sprite_inv.style.right = '100vw';
-        document.body.appendChild(pipe_sprite_inv);
+        // Tubo superior
+        let pipeTop = document.createElement('div');
+        pipeTop.className = 'pipe_sprite pipeTop';
+        pipeTop.style.position = 'absolute';
+        pipeTop.style.height = event.data.topPosition + 'vh';
+        pipeTop.style.top = '0';  
+        pipeTop.style.left = '100vw';  
+        document.body.appendChild(pipeTop);
 
-        // Crear el tubo inferior
-        let pipe_sprite = document.createElement('div');
-        pipe_sprite.className = 'pipe_sprite';
-        pipe_sprite.style.top = event.data.bottomPosition + 'vh';
-        pipe_sprite.style.height = `calc(100vh - ${event.data.bottomPosition}vh)`;
-        pipe_sprite.style.right = '100vw';
-        pipe_sprite.increase_score = '1';
-        document.body.appendChild(pipe_sprite);
-
-        console.log('Pipes added to DOM at initial right: 100vw');
+        // Tubo inferior
+        let pipeBottom = document.createElement('div');
+        pipeBottom.className = 'pipe_sprite';
+        pipeBottom.style.position = 'absolute';
+        pipeBottom.style.height = (100 - event.data.bottomPosition - gapHeight) + 'vh';
+        pipeBottom.style.top = (event.data.bottomPosition + gapHeight) + 'vh';  
+        pipeBottom.style.left = '100vw';  
+        document.body.appendChild(pipeBottom);
     }
 };
+
+scoreWorker.onmessage = function(event) {
+    if (event.data.action === 'actualizarPuntuación') {
+        score_val.innerHTML = event.data.score;
+    }
+};
+
+
+let score = 0;
+
+function movePipes() {
+    let pipes = document.querySelectorAll('.pipe_sprite');
+
+    pipes.forEach((pipe) => {
+        let pipe_left = parseFloat(window.getComputedStyle(pipe).getPropertyValue('left'));
+        pipe.style.left = (pipe_left - move_speed) + 'px';
+
+        if (pipe_left <= -10) {
+            pipe.remove();
+        }
+
+        detectCollision(bird, pipes);
+        if (!pipe.scored && pipe_left + pipe.getBoundingClientRect().width < bird.getBoundingClientRect().left) {
+            if (pipe.classList.contains('pipeTop')) {  
+                pipe.scored = true;  
+                scoreWorker.postMessage({ action: 'incrementoPuntuación' });
+                sound_point.play();  
+            }
+        }
+    });
+
+    requestAnimationFrame(movePipes);
+}
+
+
+
+
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && game_state === 'Play') {
+        requestAnimationFrame(movePipes);  
+    }
+});
+
+
+function detectCollision(bird, pipes) {
+    let birdRect = bird.getBoundingClientRect();
+
+    pipes.forEach(pipe => {
+        let pipeRect = pipe.getBoundingClientRect();
+
+        if (
+            birdRect.right > pipeRect.left &&
+            birdRect.left < pipeRect.right &&
+            birdRect.bottom > pipeRect.top &&
+            birdRect.top < pipeRect.bottom
+        ) {
+            endGame();  
+        }
+    });
+}
+
+
+
 
 setInterval(() => {
     let pipes = document.querySelectorAll('.pipe_sprite');
     pipes.forEach(pipe => {
         let currentRight = parseFloat(pipe.style.right);
-        currentRight += move_speed; // Incrementamos gradualmente la posición "right"
-        pipe.style.right = `${currentRight}vw`;  // Actualizamos la posición
+        currentRight += move_speed; 
+        pipe.style.right = `${currentRight}vw`;  
 
-        if (currentRight > 100) {  // Si el tubo sale de la pantalla
+        if (currentRight > 100) { 
             pipe.remove();
             console.log('Pipe removed from DOM');
         }
@@ -93,18 +157,6 @@ setInterval(() => {
 }, 20);
 
 
-
-
-
-
-
-
-
-scoreWorker.onmessage = function(event) {
-    if (event.data.action === 'updateScore') {
-        score_val.innerHTML = event.data.score;
-    }
-};
 
 
 
@@ -117,4 +169,5 @@ function endGame() {
 
     birdWorker.terminate();
     pipeWorker.terminate();
+    scoreWorker.terminate();
 }

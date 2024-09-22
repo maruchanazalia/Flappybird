@@ -1,18 +1,16 @@
 onmessage = function(event) {
     if (event.data.action === 'start') {
-        console.log('pipeWorker received start message');
-        startCreatingPipes(); // Asegúrate que esta función esté definida
+        console.log('pipeWorker recibió el mensaje de inicio');
+        creacionTuberias(); 
     }
 };
 
-function startCreatingPipes() {
-    // Aquí debes tener la lógica para empezar a crear los tubos
-    console.log('Pipe creation started');
+function creacionTuberias() {
+    console.log('Se inició la creación de tuberías');
 
-    // Simulación de creación de tubos para depurar
     setInterval(() => {
         const topPosition = Math.floor(Math.random() * 43) + 8;
-        const bottomPosition = topPosition + 35;
+        const bottomPosition = topPosition + 15;
 
         postMessage({
             action: 'createPipe',
@@ -20,6 +18,6 @@ function startCreatingPipes() {
             bottomPosition: bottomPosition
         });
 
-        console.log('Pipe created with positions:', topPosition, bottomPosition);
-    }, 3000); // Crea un tubo cada 3 segundos
+        console.log('Tuberías creadas en las posiciones:', topPosition, bottomPosition);
+    }, 3000);
 }

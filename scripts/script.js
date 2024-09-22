@@ -65,14 +65,14 @@ function play(){
     }
     requestAnimationFrame(move);
 
-    let bird_dy = 0;
-    function apply_gravity(){
+    let pajarito = 0;
+    function aplicar_gravedad(){
         if(game_state != 'Play') return;
-        bird_dy = bird_dy + grativy;
+        pajarito = pajarito + grativy;
         document.addEventListener('keydown', (e) => {
             if(e.key == 'ArrowUp' || e.key == ' '){
                 img.src = 'images/Bird-2.png';
-                bird_dy = -7.6;
+                pajarito = -7.6;
             }
         });
 
@@ -89,11 +89,11 @@ function play(){
             message.classList.remove('messageStyle');
             return;
         }
-        bird.style.top = bird_props.top + bird_dy + 'px';
+        bird.style.top = bird_props.top + pajarito + 'px';
         bird_props = bird.getBoundingClientRect();
-        requestAnimationFrame(apply_gravity);
+        requestAnimationFrame(aplicar_gravedad);
     }
-    requestAnimationFrame(apply_gravity);
+    requestAnimationFrame(aplicar_gravedad);
 
     let pipe_seperation = 0;
 

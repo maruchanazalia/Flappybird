@@ -1,21 +1,21 @@
-let gravity = 0.5;
-let bird_dy = 0;
+let gravedad = 0.5;
+let pajarito = 0;
 
 onmessage = (event) => {
     if (event.data.action === 'start') {
-        applyGravity();
+        aplicarGravedad();
     } else if (event.data.action === 'flap') {
-        bird_dy = -7.6;  
+        pajarito = -7.6;  
     }
 };
 
-function applyGravity() {
-    bird_dy += gravity;
+function aplicarGravedad() {
+    pajarito += gravedad;
 
     postMessage({
-        action: 'updatePosition',
-        bird_dy: bird_dy
+        action: 'actualizarPosición',
+        pajarito: pajarito
     });
 
-    setTimeout(applyGravity, 20);  
+    setTimeout(aplicarGravedad, 20);  
 }
